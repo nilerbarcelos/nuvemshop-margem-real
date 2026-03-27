@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suporte — Margem Real</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; color: #333; }
+    header { background: #1a1a2e; padding: 16px 24px; }
+    .logo { color: white; font-size: 18px; font-weight: 700; text-decoration: none; }
+    .logo span { color: #4ade80; }
+    .container { max-width: 720px; margin: 48px auto; padding: 0 24px; }
+    h1 { font-size: 28px; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
+    .subtitle { font-size: 16px; color: #666; margin-bottom: 48px; }
+    .contact-card { background: white; border-radius: 14px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 40px; display: flex; align-items: center; gap: 20px; }
+    .contact-icon { font-size: 40px; }
+    .contact-card h3 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .contact-card p { font-size: 14px; color: #666; margin-bottom: 12px; }
+    .contact-card a { background: #1a1a2e; color: white; padding: 8px 18px; border-radius: 7px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; }
+    .contact-card a:hover { background: #2d2d4e; }
+    h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 20px; }
+    .faq { display: flex; flex-direction: column; gap: 12px; }
+    .faq-item { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .faq-question { padding: 18px 20px; font-size: 15px; font-weight: 600; color: #1a1a2e; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+    .faq-question:hover { background: #fafafa; }
+    .faq-arrow { transition: transform 0.2s; font-size: 12px; color: #888; }
+    .faq-answer { padding: 0 20px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s; font-size: 14px; color: #555; line-height: 1.7; }
+    .faq-item.open .faq-answer { max-height: 400px; padding: 0 20px 18px; }
+    .faq-item.open .faq-arrow { transform: rotate(180deg); }
+    footer { text-align: center; padding: 32px 24px; color: #aaa; font-size: 13px; margin-top: 48px; border-top: 1px solid #e5e5e5; }
+    footer a { color: #888; text-decoration: none; margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">Margem<span>Real</span></a>
+</header>
+
+<div class="container">
+  <h1>Central de Suporte</h1>
+  <p class="subtitle">Tire suas dúvidas ou entre em contato com nossa equipe.</p>
+
+  <div class="contact-card">
+    <div class="contact-icon">✉️</div>
+    <div>
+      <h3>Fale conosco por e-mail</h3>
+      <p>Respondemos em até 1 dia útil.</p>
+      <a href="mailto:suporte@margemreal.app">suporte@margemreal.app</a>
+    </div>
+  </div>
+
+  <h2>Perguntas frequentes</h2>
+  <div class="faq">
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Como instalo o Margem Real na minha loja?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        Acesse a <a href="https://www.nuvemshop.com.br/loja-aplicativos-nuvem" target="_blank">Loja de Aplicativos da Nuvemshop</a>, busque por "Margem Real" e clique em "Instalar". Você será redirecionado para autorizar as permissões necessárias. O processo leva menos de 1 minuto.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Quanto tempo dura o período de trial?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        O trial gratuito dura 14 dias a partir da instalação. Não é necessário informar dados de cartão de crédito durante o período gratuito. Ao final, o plano mensal de R$49 é cobrado automaticamente via Nuvemshop.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Como cadastro o custo dos meus produtos?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        No painel do Margem Real, na seção "Produtos & Custos", clique no campo de custo ao lado de cada produto e informe o valor. O campo é salvo automaticamente quando você clica fora dele. Você pode atualizar o custo a qualquer momento.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Com que frequência os dados são sincronizados?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        Os dados de produtos e pedidos são sincronizados automaticamente a cada hora. Você também pode forçar uma sincronização manual clicando no botão "Sincronizar" no painel a qualquer momento.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Como funciona o alerta de estoque?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        Você define um limite de estoque mínimo nas configurações (padrão: 5 unidades). Quando qualquer produto atingir esse limite, você recebe um e-mail com a lista dos produtos em estoque crítico. O alerta é enviado uma vez a cada 24 horas para não encher sua caixa de entrada.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        O que contém o relatório semanal?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        O relatório semanal é enviado toda segunda-feira às 8h e inclui: receita total da semana, lucro total, margem geral e os 10 produtos mais vendidos com respectiva margem. Para receber, configure seu e-mail nas configurações do painel.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Como o app calcula a margem de lucro?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        A margem é calculada como: <strong>((Preço de venda − Custo) / Preço de venda) × 100</strong>. Por exemplo, se um produto é vendido por R$100 e custa R$60, a margem é de 40%. Quanto maior a margem, mais lucrativa é a venda.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Como cancelo o plano?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        Para cancelar, basta desinstalar o aplicativo pelo painel de aplicativos da sua loja Nuvemshop (Minha Loja → Aplicativos). O cancelamento é imediato e você não será cobrado no próximo ciclo.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        Meus dados são seguros?
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-answer">
+        Sim. O Margem Real acessa apenas os dados necessários (produtos e pedidos) e não armazena dados pessoais dos seus clientes. Ao desinstalar o app, todos os seus dados são removidos. Consulte nossa <a href="/privacidade">Política de Privacidade</a> para mais detalhes.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <a href="/">Início</a>
+  <a href="/privacidade">Privacidade</a>
+  <p style="margin-top:12px">© 2025 Margem Real</p>
+</footer>
+
+<script>
+  function toggle(el) {
+    el.closest('.faq-item').classList.toggle('open');
+  }
+</script>
+</body>
+</html>
