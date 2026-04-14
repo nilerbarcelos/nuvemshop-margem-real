@@ -1,14 +1,7 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY || process.env.SMTP_PASS);
+const FROM = process.env.SMTP_FROM || "Margem Real <onboarding@resend.dev>";
 
 async function sendStockAlert(email, storeName, lowStockProducts) {
   const rows = lowStockProducts
@@ -21,8 +14,8 @@ async function sendStockAlert(email, storeName, lowStockProducts) {
     )
     .join("");
 
-  await transporter.sendMail({
-    from: `"Margem Real" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: FROM,
     to: email,
     subject: `⚠️ Alerta de estoque — ${storeName}`,
     html: `
@@ -66,8 +59,8 @@ async function sendWeeklyReport(email, storeName, report) {
     )
     .join("");
 
-  await transporter.sendMail({
-    from: `"Margem Real" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: FROM,
     to: email,
     subject: `📊 Relatório semanal — ${storeName}`,
     html: `

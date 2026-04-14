@@ -17,7 +17,9 @@
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "playwright": "^1.59.1",
+    "resend": "^6.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
