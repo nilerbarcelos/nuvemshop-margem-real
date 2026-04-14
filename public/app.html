@@ -33,6 +33,7 @@
     .stock-zero { background: #fff5f5; color: #e53e3e; }
     .stock-low { background: #fffaf0; color: #dd6b20; }
     .stock-ok { background: #f0fff4; color: #38a169; }
+    .stock-unlimited { background: #ebf8ff; color: #3182ce; }
     .cost-input { border: 1px solid #ddd; border-radius: 6px; padding: 4px 8px; font-size: 13px; width: 90px; text-align: right; }
     .cost-input:focus { outline: none; border-color: #1a1a2e; }
     .margin-bar { height: 6px; border-radius: 3px; background: #f0f0f0; overflow: hidden; }
@@ -217,8 +218,8 @@
 
     tbody.innerHTML = data.products.map(p => {
       const marginColor = p.margin >= 30 ? '#38a169' : p.margin >= 10 ? '#dd6b20' : '#e53e3e';
-      const stockClass = p.stock === 0 ? 'stock-zero' : p.stock <= 5 ? 'stock-low' : 'stock-ok';
-      const stockLabel = p.stock === 0 ? 'Zerado' : p.stock + ' un.';
+      const stockClass = p.stock === null ? 'stock-unlimited' : p.stock === 0 ? 'stock-zero' : p.stock <= 5 ? 'stock-low' : 'stock-ok';
+      const stockLabel = p.stock === null ? 'Ilimitado' : p.stock === 0 ? 'Zerado' : p.stock + ' un.';
       return `<tr>
         <td>${p.name}</td>
         <td>R$ ${Number(p.price).toFixed(2)}</td>

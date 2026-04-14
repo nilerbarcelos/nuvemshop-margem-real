@@ -14,7 +14,7 @@ class NuvemshopClient {
       headers: {
         Authentication: `bearer ${accessToken}`,
         "Content-Type": "application/json",
-        "User-Agent": "NuvemshopMargemReal/1.0",
+        "User-Agent": "NuvemshopMargemReal/1.0 (nilerbarcelos@gmail.com)",
       },
       timeout: 15000,
     });

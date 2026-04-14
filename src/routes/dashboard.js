@@ -23,12 +23,12 @@ router.get("/api/status", requireAuth, (req, res) => {
     .get(storeId);
   const lowStockCount = db
     .prepare(
-      "SELECT COUNT(*) as count FROM products_cache WHERE store_id = ? AND stock <= ?",
+      "SELECT COUNT(*) as count FROM products_cache WHERE store_id = ? AND stock IS NOT NULL AND stock <= ?",
     )
     .get(storeId, store.stock_alert_threshold ?? 5);
   const zeroStockCount = db
     .prepare(
-      "SELECT COUNT(*) as count FROM products_cache WHERE store_id = ? AND stock = 0",
+      "SELECT COUNT(*) as count FROM products_cache WHERE store_id = ? AND stock IS NOT NULL AND stock = 0",
     )
     .get(storeId);
   const ordersThisWeek = db

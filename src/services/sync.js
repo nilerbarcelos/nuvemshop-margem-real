@@ -21,13 +21,28 @@ async function syncProducts(storeId) {
       synced_at = CURRENT_TIMESTAMP
   `);
 
+  const deleteStale = db.prepare(`
+    DELETE FROM products_cache
+    WHERE store_id = ? AND nuvemshop_product_id NOT IN (SELECT value FROM json_each(?))
+  `);
+
   const syncAll = db.transaction((items) => {
     for (const p of items) {
       const name = p.name?.pt || p.name || "Produto";
       const price = parseFloat(p.variants?.[0]?.price || p.price || 0);
-      const stock =
-        p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0;
+      const allUnlimited =
+        !p.variants?.length ||
+        p.variants.every((v) => v.stock === null || v.stock === undefined);
+      const stock = allUnlimited
+        ? null
+        : p.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
       upsert.run(storeId, String(p.id), name, price, stock);
+    }
+
+    // Remove produtos que não existem mais na Nuvemshop
+    if (items.length > 0) {
+      const apiIds = JSON.stringify(items.map((p) => String(p.id)));
+      deleteStale.run(storeId, apiIds);
     }
   });
 

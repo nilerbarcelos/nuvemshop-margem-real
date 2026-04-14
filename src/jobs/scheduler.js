@@ -33,7 +33,7 @@ function startScheduler() {
         .prepare(
           `
         SELECT name, stock FROM products_cache
-        WHERE store_id = ? AND stock <= ?
+        WHERE store_id = ? AND stock IS NOT NULL AND stock <= ?
         ORDER BY stock ASC
       `,
         )
