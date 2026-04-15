@@ -14,7 +14,10 @@ function verifySignature(req) {
     .createHmac("sha256", secret)
     .update(body)
     .digest("base64");
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length) return false;
+  return crypto.timingSafeEqual(sigBuf, expBuf);
 }
 
 // Loja desinstalou o app — apagar todos os dados
