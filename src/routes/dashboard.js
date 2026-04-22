@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const db = require("../db");
 const { syncProducts, syncOrders, calcMargin } = require("../services/sync");
+const { checkAndSendLowStockAlert } = require("../jobs/scheduler");
 
 const router = express.Router();
 
@@ -46,6 +47,12 @@ router.get("/api/status", requireAuth, (req, res) => {
       )
     : 0;
 
+  const lastAlert = db
+    .prepare(
+      "SELECT MAX(sent_at) as last FROM alerts_sent WHERE store_id = ? AND type IN ('low_stock','low_stock_test')",
+    )
+    .get(storeId);
+
   res.json({
     store: {
       name: store.store_name,
@@ -62,6 +69,12 @@ router.get("/api/status", requireAuth, (req, res) => {
       lowStockCount: lowStockCount.count,
       zeroStockCount: zeroStockCount.count,
       ordersThisWeek: ordersThisWeek.count,
+    },
+    alerts: {
+      emailProviderConfigured: !!(
+        process.env.RESEND_API_KEY || process.env.SMTP_PASS
+      ),
+      lastLowStockAlertAt: lastAlert?.last || null,
     },
   });
 });
@@ -158,9 +171,19 @@ router.post("/api/sync", requireAuth, async (req, res) => {
 });
 
 // Atualiza configurações
-router.put("/api/settings", requireAuth, (req, res) => {
+router.put("/api/settings", requireAuth, async (req, res) => {
   const storeId = req.session.storeId;
   const { contactEmail, stockAlertThreshold, weeklyReportEnabled } = req.body;
+
+  const parsedThreshold = Number.parseInt(stockAlertThreshold, 10);
+  const thresholdValue =
+    Number.isFinite(parsedThreshold) && parsedThreshold >= 0
+      ? parsedThreshold
+      : 5;
+
+  const previous = db
+    .prepare("SELECT stock_alert_threshold FROM stores WHERE id = ?")
+    .get(storeId);
 
   db.prepare(
     `
@@ -173,12 +196,69 @@ router.put("/api/settings", requireAuth, (req, res) => {
   `,
   ).run(
     contactEmail || null,
-    parseInt(stockAlertThreshold) || 5,
+    thresholdValue,
     weeklyReportEnabled ? 1 : 0,
     storeId,
   );
 
-  res.json({ success: true });
+  // Threshold mudou: invalida dedup de 24h para permitir re-disparo
+  if (previous && previous.stock_alert_threshold !== thresholdValue) {
+    db.prepare(
+      "DELETE FROM alerts_sent WHERE store_id = ? AND type = 'low_stock'",
+    ).run(storeId);
+  }
+
+  // Disparo imediato best-effort se houver produtos abaixo do novo threshold
+  let alert = { sent: false, reason: "skipped" };
+  if (contactEmail) {
+    try {
+      const store = db
+        .prepare("SELECT * FROM stores WHERE id = ?")
+        .get(storeId);
+      alert = await checkAndSendLowStockAlert(store);
+      if (alert.sent) {
+        console.log(
+          `[alert] Estoque crítico enviado pós-settings loja ${storeId}`,
+        );
+      }
+    } catch (err) {
+      console.error(`[alert] Erro pós-settings loja ${storeId}:`, err.message);
+      alert = { sent: false, reason: "send_failed" };
+    }
+  }
+
+  res.json({ success: true, alert });
+});
+
+// Envia alerta de teste imediato
+router.post("/api/alerts/test", requireAuth, async (req, res) => {
+  const storeId = req.session.storeId;
+  const store = db.prepare("SELECT * FROM stores WHERE id = ?").get(storeId);
+
+  if (!store?.contact_email) {
+    return res.status(400).json({ sent: false, reason: "no_email" });
+  }
+  if (!process.env.RESEND_API_KEY && !process.env.SMTP_PASS) {
+    return res
+      .status(500)
+      .json({ sent: false, reason: "email_not_configured" });
+  }
+
+  try {
+    const result = await checkAndSendLowStockAlert(store, {
+      force: true,
+      markType: "low_stock_test",
+    });
+    return res.json(result);
+  } catch (err) {
+    console.error(
+      `[alert] Erro no teste de alerta loja ${storeId}:`,
+      err.message,
+    );
+    return res
+      .status(500)
+      .json({ sent: false, reason: "send_failed", message: err.message });
+  }
 });
 
 module.exports = router;

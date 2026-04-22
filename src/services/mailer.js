@@ -1,7 +1,21 @@
 const { Resend } = require("resend");
 
-const resend = new Resend(process.env.RESEND_API_KEY || process.env.SMTP_PASS);
 const FROM = process.env.SMTP_FROM || "Margem Real <onboarding@resend.dev>";
+
+let _resend = null;
+function getResend() {
+  if (_resend) return _resend;
+  const key = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
+  if (!key) {
+    const err = new Error(
+      "Provedor de e-mail não configurado (defina RESEND_API_KEY)",
+    );
+    err.code = "EMAIL_NOT_CONFIGURED";
+    throw err;
+  }
+  _resend = new Resend(key);
+  return _resend;
+}
 
 async function sendStockAlert(email, storeName, lowStockProducts) {
   const rows = lowStockProducts
@@ -14,7 +28,7 @@ async function sendStockAlert(email, storeName, lowStockProducts) {
     )
     .join("");
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: `⚠️ Alerta de estoque — ${storeName}`,
@@ -59,7 +73,7 @@ async function sendWeeklyReport(email, storeName, report) {
     )
     .join("");
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: `📊 Relatório semanal — ${storeName}`,

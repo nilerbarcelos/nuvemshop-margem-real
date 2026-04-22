@@ -172,7 +172,11 @@
           <span style="font-size:14px">Relatório semanal toda segunda às 8h</span>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
+        <button class="btn btn-outline" onclick="sendTestAlert(this)">Enviar e-mail de teste</button>
+      </div>
+      <div id="alert-status" style="font-size:13px;color:#555;margin-top:4px"></div>
     </div>
   </div>
 </div>
@@ -200,6 +204,21 @@
     document.getElementById('contact-email').value = data.store.contactEmail || '';
     document.getElementById('stock-threshold').value = data.store.stockAlertThreshold;
     document.getElementById('weekly-report').checked = data.store.weeklyReportEnabled;
+
+    const alertStatus = document.getElementById('alert-status');
+    if (alertStatus && data.alerts) {
+      const parts = [];
+      if (!data.alerts.emailProviderConfigured) {
+        parts.push('<span style="color:#e53e3e">⚠️ Provedor de e-mail não configurado</span>');
+      }
+      if (data.alerts.lastLowStockAlertAt) {
+        const d = new Date(data.alerts.lastLowStockAlertAt.replace(' ', 'T') + 'Z');
+        parts.push(`Último alerta enviado em ${d.toLocaleString('pt-BR')}`);
+      } else {
+        parts.push('Nenhum alerta enviado ainda');
+      }
+      alertStatus.innerHTML = parts.join(' · ');
+    }
   }
 
   async function loadProducts(page = 1) {
@@ -319,7 +338,38 @@
         weeklyReportEnabled: document.getElementById('weekly-report').checked,
       })
     });
-    if (res.ok) showToast('Configurações salvas');
+    if (!res.ok) return showToast('Erro ao salvar configurações');
+    const data = await res.json().catch(() => ({}));
+    if (data.alert?.sent) {
+      showToast(`Configurações salvas · alerta enviado (${data.alert.count} produto${data.alert.count === 1 ? '' : 's'})`);
+    } else {
+      showToast('Configurações salvas');
+    }
+    loadStatus();
+  }
+
+  async function sendTestAlert(btn) {
+    btn.disabled = true;
+    try {
+      const res = await fetch('/dashboard/api/alerts/test', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (data.sent) {
+        showToast(`E-mail enviado para ${data.email} · ${data.count} produto${data.count === 1 ? '' : 's'}`);
+      } else {
+        const msg = {
+          no_email: 'Preencha o e-mail antes de enviar o teste',
+          no_low_stock: `Nenhum produto com estoque ≤ ${data.threshold ?? '?'}`,
+          email_not_configured: 'Provedor de e-mail não configurado no servidor',
+          send_failed: 'Falha ao enviar — verifique os logs',
+        }[data.reason] || 'Nada a enviar';
+        showToast(msg);
+      }
+      loadStatus();
+    } catch {
+      showToast('Erro ao enviar e-mail de teste');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function showToast(msg) {

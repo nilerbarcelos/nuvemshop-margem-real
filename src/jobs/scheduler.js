@@ -8,6 +8,65 @@ function getActiveStores() {
   return db.prepare("SELECT * FROM stores WHERE subscription_active = 1").all();
 }
 
+function queryLowStock(storeId, threshold) {
+  return db
+    .prepare(
+      `
+      SELECT name, stock FROM products_cache
+      WHERE store_id = ? AND stock IS NOT NULL AND stock <= ?
+      ORDER BY stock ASC
+    `,
+    )
+    .all(storeId, threshold);
+}
+
+async function checkAndSendLowStockAlert(
+  store,
+  { force = false, markType = "low_stock" } = {},
+) {
+  if (!store?.contact_email) {
+    return { sent: false, reason: "no_email" };
+  }
+  if (!process.env.RESEND_API_KEY && !process.env.SMTP_PASS) {
+    return { sent: false, reason: "email_not_configured" };
+  }
+
+  const threshold = store.stock_alert_threshold ?? 5;
+  const lowStock = queryLowStock(store.id, threshold);
+  if (!lowStock.length) {
+    return { sent: false, reason: "no_low_stock", threshold };
+  }
+
+  const key = lowStock.map((p) => p.name).join(",");
+
+  if (!force) {
+    const recent = db
+      .prepare(
+        `
+        SELECT id FROM alerts_sent
+        WHERE store_id = ? AND type = 'low_stock' AND reference = ?
+        AND sent_at >= datetime('now', '-24 hours')
+      `,
+      )
+      .get(store.id, key);
+    if (recent) {
+      return { sent: false, reason: "recently_sent", threshold };
+    }
+  }
+
+  await sendStockAlert(store.contact_email, store.store_name, lowStock);
+  db.prepare(
+    "INSERT INTO alerts_sent (store_id, type, reference) VALUES (?, ?, ?)",
+  ).run(store.id, markType, key);
+
+  return {
+    sent: true,
+    count: lowStock.length,
+    email: store.contact_email,
+    threshold,
+  };
+}
+
 function startScheduler() {
   // Sync de produtos e pedidos a cada hora
   cron.schedule("0 * * * *", async () => {
@@ -26,41 +85,11 @@ function startScheduler() {
   cron.schedule("0 */2 * * *", async () => {
     const stores = getActiveStores();
     for (const store of stores) {
-      if (!store.contact_email) continue;
-
-      const threshold = store.stock_alert_threshold ?? 5;
-      const lowStock = db
-        .prepare(
-          `
-        SELECT name, stock FROM products_cache
-        WHERE store_id = ? AND stock IS NOT NULL AND stock <= ?
-        ORDER BY stock ASC
-      `,
-        )
-        .all(store.id, threshold);
-
-      if (!lowStock.length) continue;
-
-      // Verifica se já enviou alerta nas últimas 24h para produtos iguais
-      const key = lowStock.map((p) => p.name).join(",");
-      const recent = db
-        .prepare(
-          `
-        SELECT id FROM alerts_sent
-        WHERE store_id = ? AND type = 'low_stock' AND reference = ?
-        AND sent_at >= datetime('now', '-24 hours')
-      `,
-        )
-        .get(store.id, key);
-
-      if (recent) continue;
-
       try {
-        await sendStockAlert(store.contact_email, store.store_name, lowStock);
-        db.prepare(
-          "INSERT INTO alerts_sent (store_id, type, reference) VALUES (?, 'low_stock', ?)",
-        ).run(store.id, key);
-        console.log(`[alert] Estoque crítico enviado para loja ${store.id}`);
+        const result = await checkAndSendLowStockAlert(store);
+        if (result.sent) {
+          console.log(`[alert] Estoque crítico enviado para loja ${store.id}`);
+        }
       } catch (err) {
         console.error(
           `[alert] Erro ao enviar email loja ${store.id}:`,
@@ -126,4 +155,4 @@ function startScheduler() {
   );
 }
 
-module.exports = { startScheduler };
+module.exports = { startScheduler, checkAndSendLowStockAlert };
