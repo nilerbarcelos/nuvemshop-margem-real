@@ -17,6 +17,22 @@ function getResend() {
   return _resend;
 }
 
+// Resend v6 retorna { data, error } em vez de lançar em erros de API (403,
+// 422, domínio não verificado, sandbox etc). Uniformiza lançando exceção
+// para que os chamadores tratem pelo catch.
+async function sendEmail(payload) {
+  const { data, error } = await getResend().emails.send(payload);
+  if (error) {
+    const err = new Error(
+      `Resend recusou o envio: ${error.message || error.name || JSON.stringify(error)}`,
+    );
+    err.code = "EMAIL_SEND_FAILED";
+    err.resendError = error;
+    throw err;
+  }
+  return data;
+}
+
 async function sendStockAlert(email, storeName, lowStockProducts) {
   const rows = lowStockProducts
     .map(
@@ -28,7 +44,7 @@ async function sendStockAlert(email, storeName, lowStockProducts) {
     )
     .join("");
 
-  await getResend().emails.send({
+  await sendEmail({
     from: FROM,
     to: email,
     subject: `⚠️ Alerta de estoque — ${storeName}`,
@@ -73,7 +89,7 @@ async function sendWeeklyReport(email, storeName, report) {
     )
     .join("");
 
-  await getResend().emails.send({
+  await sendEmail({
     from: FROM,
     to: email,
     subject: `📊 Relatório semanal — ${storeName}`,
